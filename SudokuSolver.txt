@@ -1,0 +1,59 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Template for a SPARC file
+%% Author: Derek Fritz
+%% Description: Sudoku Problem
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+sorts
+    #numbers = {1,2,3,4,5,6,7,8,9}.
+    #i = {1,2,3,4,5,6,7,8,9}.
+    #j = {1,2,3,4,5,6,7,8,9}.
+    #bool = {true,false}.
+predicates
+    % the cell at (I,J) has the value N
+    hasNumber(#i,#j,#numbers).
+    % the cells at (I1,J1) and (I2,J2) are in the same 3x3 block
+    sameBlock(#i,#j,#i,#j).
+     % the cells at (I1,J1) and (I2,J2) are in the same row
+    sameRow(#i,#j,#i,#j).
+     % the cells at (I1,J1) and (I2,J2) are in the same column
+    sameColumn(#i,#j,#i,#j).
+     % the cells at (I1,J1) and (I2,J2) are in the same row belt
+    sameRowBelt(#i,#i).
+     % the cells at (I1,J1) and (I2,J2) are in the same column belt
+    sameColumnBelt(#j,#j).
+     % the cells at (I1,J1) and (I2,J2) are the same cell if B = true
+    identical(#i,#j,#i,#j,#bool).
+rules
+    % every cell must have a value
+    hasNumber(I,J,1) | hasNumber(I,J,2) | hasNumber(I,J,3) | hasNumber(I,J,4) | hasNumber(I,J,5) | 
+    hasNumber(I,J,6) | hasNumber(I,J,7) | hasNumber(I,J,8) | hasNumber(I,J,9).
+    % two cells are identical if their I and J values are both the same
+    identical(I1,J1,I2,J2,true) :- I1 = I2, J1 = J2.
+    identical(I1,J1,I2,J2,false) :- I1 != I2.
+    identical(I1,J1,I2,J2,false) :- J1 != J2.
+    % two cells are in the same row if their I values are the same
+    sameRow(I1,J1,I2,J2) :- I1 = I2, J1 != J2.
+    % two cells are in the same column if their J values are the same
+    sameColumn(I1,J1,I2,J2) :- J1 = J2, I1 != I2.
+    % two cells are in the same row belt if their I values are within one of the three belt intervals
+    sameRowBelt(I1,I2) :- I1 <= 3, I2 <= 3.
+    sameRowBelt(I1,I2) :- 4 <= I1, I1 <= 6, 4 <= I2, I2 <= 6.
+    sameRowBelt(I1,I2) :- 7<= I1, I1 <= 9, 7 <= I2, I2 <= 9.
+    % two cells are in the same column belt if their J values are within one of the three belt intervals
+    sameColumnBelt(J1,J2) :- J1 <= 3, J2 <= 3.
+    sameColumnBelt(J1,J2) :- 4 <= J1, J1 <= 6, 4 <= J2, J2 <= 6.
+    sameColumnBelt(J1,J2) :- 7<= J1, J1 <= 9, 7 <= J2, J2 <= 9.
+    % two cells are in the same block if they are in the same row and column belt
+    sameBlock(I1,J1,I2,J2) :- sameRowBelt(I1,I2), sameColumnBelt(J1,J2).
+    % two cells in the same row, column, or block cannot have the same value (assuming they are not the same cell)
+    :- sameRow(I1,J1,I2,J2), hasNumber(I1,J1,N1), hasNumber(I2,J2,N2), N1 = N2, identical(I1,J1,I2,J2,B), B = false.
+    :- sameColumn(I1,J1,I2,J2), hasNumber(I1,J1,N1), hasNumber(I2,J2,N2), N1 = N2, identical(I1,J1,I2,J2,B), B = false.
+    :- sameBlock(I1,J1,I2,J2), hasNumber(I1,J1,N1), hasNumber(I2,J2,N2), N1 = N2, identical(I1,J1,I2,J2,B), B = false.
+    
+    %hasNumber(7,2,1).  hasNumber(1,4,1).  hasNumber(9,1,2).  hasNumber(3,6,2). 
+    %hasNumber(7,6,3).  hasNumber(2,8,3).  hasNumber(5,9,3).  hasNumber(6,2,4).
+    %hasNumber(5,3,5).  hasNumber(6,5,5).  hasNumber(2,7,5).  hasNumber(9,8,5).
+    %hasNumber(3,1,6).  hasNumber(4,4,6).  hasNumber(5,5,6).  hasNumber(6,9,6).
+    %hasNumber(1,1,7).  hasNumber(2,2,7).  hasNumber(8,4,7).  hasNumber(8,1,8).
+    %hasNumber(9,3,8).  hasNumber(4,7,8).  hasNumber(7,9,8).  hasNumber(5,1,9).

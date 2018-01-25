@@ -1,0 +1,119 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Template for a SPARC file
+%% Author: Derek Fritz
+%% Description: Missionaries/Cannibals Problem
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% AL System Description
+%
+% fluents
+%   inertial = {m(L,X), c(L,X), b(L,X), casualties : L is a location and X is a number}
+% actions = {move(L,N,M) : N and M are numbers and L is a location}
+%
+% Causal Laws
+% move(L,N,M) causes m(L,X+M) if m(L,X).    % Moving M missionaries adds M to the number of missionaries at the location
+% move(L,N,M) causes c(L,X+N) if c(L,X).    % Moving N cannibals adds N to the number of cannibals at the location
+% move(L,N,M) causes b(L,1).                % Moving to location L causes there to be a boat at L
+% move(L,N,M) causes b(S,0) if L != S.      % Moving to location L causes there to be no boat at the source location
+% move(L,N,M) causes m(S,X-M) if L != S.    % Moving M missionaries removes M from the number of missionaries at the source
+% move(L,N,M) causes c(S,X-N) if L != S.    % Moving N cannibals removes N from the number of cannibals at the source
+%
+% State Constraints
+% casualities if m(L,M), c(L,N), N > M.     % Casualities occur if cannibals outnumber missionaires at any location
+% -b(L,1) if b(S,1), L != S.                % The boat cannot be at two places at once
+% -m(L,M) if m(L,N), M != N.                % There cannot be two distinct numbers of missionaries or cannibals at the same location
+% -c(L,M) if c(L,N), M != N.
+%
+% Executability Constraints
+% impossible move(L,N,M) if N+M > 2.        % A boat cannot move if it has more than two people
+% impossible move(L,N,M) if N+M < 1.        % A boat cannot move if it has less than one person
+% impossible move(L,N,M) if b(S,0), S != L.             % A boat cannot move people if there is not a boat at the source
+% impossible move(L,N,M) if m(S,X), S != L, X < M.      % A boat cannot move more people than there exists at a source
+% impossible move(L,N,M) if c(S,X), S != L, X < N.
+
+sorts
+    #step = {0,1,2,3,4,5,6,7,8,9,10,11}.
+    #location = {b1,b2}.
+    #boat = {0,1}.
+    #missionary = {0,1,2,3}.
+    #cannibal = {0,1,2,3}.
+    #inertial_fluent = m(#location,#missionary) + c(#location,#cannibal) + b(#location,#boat) + {casualties}.
+    #action = move(#location,#cannibal,#missionary).
+    #fluent = #inertial_fluent.
+predicates
+    holds(#fluent,#step).
+    occurs(#action,#step).
+    success().
+    goal(#step).
+    something_happened(#step).
+rules
+    % Statements
+    % Causal Laws
+    % Moving M missionaries adds M to the number of missionaries at the location
+    holds(m(L,X+M), T+1) :- holds(m(L,X), T), occurs(move(L,N,M), T). 
+    % Moving N cannibals adds N to the number of cannibals at the location
+    holds(c(L,X+N), T+1) :- holds(c(L,X), T), occurs(move(L,N,M), T).
+    % Moving to location L causes there to be a boat at L
+    holds(b(L,1), T+1) :- occurs(move(L,N,M), T).
+    % Moving to location L causes there to be no boat at the source location
+    holds(b(S,0), T+1) :- occurs(move(L,N,M), T), L != S.
+    % Moving M missionaries removes M from the number of missionaries at the source
+    holds(m(S,X-M), T+1) :- holds(m(S,X), T), occurs(move(L,N,M), T), L != S.
+    % Moving N cannibals removes N from the number of cannibals at the source
+    holds(c(S,X-N), T+1) :- holds(c(S,X), T), occurs(move(L,N,M), T), L != S.
+	
+	% State Constraints
+	% Casualities occur if cannibals outnumber missionaires at any location
+	holds(casualties,T) :- holds(m(L,M),T), holds(c(L,N),T), N > M, M > 0.
+	% The boat cannot be at two places at once
+	-holds(b(L,1),T) :- holds(b(S,1),T), L != S.
+	% The boat cannot be at a location and not at a location at the same time
+	-holds(b(L,M),T) :- holds(b(L,N),T), M != N.
+	% There cannot be two distinct numbers of missionaries or cannibals at the same location
+	-holds(m(L,M),T) :- holds(m(L,N),T), M != N.
+	-holds(c(L,M),T) :- holds(c(L,N),T), M != N.
+	
+	% Executability Constraints
+	% A boat cannot move if it has more than two people
+	-occurs(move(L,N,M),T) :- N + M > 2.
+	% A boat cannot move if it has less than one person
+	-occurs(move(L,N,M),T) :- N + M < 1.
+	% A boat cannot move people if there is not a boat at the source
+	-occurs(move(L,N,M),T) :- holds(b(S,0),T), L != S.
+	% A boat cannot move more people than there exists at a source
+	-occurs(move(L,N,M),T) :- holds(m(S,X),T), X < M, L != S.
+	-occurs(move(L,N,M),T) :- holds(c(S,X),T), X < N, L != S.
+	
+	% Inertial Axioms for Inertial Fluents
+	holds(F,T+1) :- #inertial_fluent(F), holds(F,T), not -holds(F,T+1).
+	-holds(F,T+1) :- #inertial_fluent(F), -holds(F,T), not holds(F,T+1).
+	
+	% CWA for Actions
+	-occurs(A,T) :- not occurs(A,T).
+	
+	% Initial State
+	holds(m(b1,3),0).
+	holds(c(b1,3),0).
+	holds(b(b1,1),0).
+	holds(m(b2,0),0).
+	holds(c(b2,0),0).
+	holds(b(b2,0),0).
+	-holds(casualties,0).
+	
+	% Goal
+	% The goal is achieved when all three of both missionaries and cannibals have made it to the other side without any casualties occuring
+	goal(T) :- holds(m(b2,3),T), holds(c(b2,3),T), -holds(casualties,T).
+	
+	% Simple Planning Module
+	success :- goal(T).
+	:- not success.
+	% Every action must either be performed or not while the goal is not yet achieved
+	occurs(A,T) | -occurs(A,T) :- not goal(T).
+	% Two actions cannot occur at once
+	:- occurs(A1,T), occurs(A2,T), A1 != A2.
+	% An action is performed at every step before the goal is achieved
+	something_happened(T) :- occurs(A,T).
+	:- goal(T), goal(T-1), not something_happened(I), I < T.
+	
+	display
+	occurs(A,T).
