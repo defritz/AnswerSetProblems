@@ -62,58 +62,58 @@ rules
     % Moving N cannibals removes N from the number of cannibals at the source
     holds(c(S,X-N), T+1) :- holds(c(S,X), T), occurs(move(L,N,M), T), L != S.
 	
-	% State Constraints
-	% Casualities occur if cannibals outnumber missionaires at any location
-	holds(casualties,T) :- holds(m(L,M),T), holds(c(L,N),T), N > M, M > 0.
-	% The boat cannot be at two places at once
-	-holds(b(L,1),T) :- holds(b(S,1),T), L != S.
-	% The boat cannot be at a location and not at a location at the same time
-	-holds(b(L,M),T) :- holds(b(L,N),T), M != N.
-	% There cannot be two distinct numbers of missionaries or cannibals at the same location
-	-holds(m(L,M),T) :- holds(m(L,N),T), M != N.
-	-holds(c(L,M),T) :- holds(c(L,N),T), M != N.
+    % State Constraints
+    % Casualities occur if cannibals outnumber missionaires at any location
+    holds(casualties,T) :- holds(m(L,M),T), holds(c(L,N),T), N > M, M > 0.
+    % The boat cannot be at two places at once
+    -holds(b(L,1),T) :- holds(b(S,1),T), L != S.
+    % The boat cannot be at a location and not at a location at the same time
+    -holds(b(L,M),T) :- holds(b(L,N),T), M != N.
+    % There cannot be two distinct numbers of missionaries or cannibals at the same location
+    -holds(m(L,M),T) :- holds(m(L,N),T), M != N.
+    -holds(c(L,M),T) :- holds(c(L,N),T), M != N.
 	
-	% Executability Constraints
-	% A boat cannot move if it has more than two people
-	-occurs(move(L,N,M),T) :- N + M > 2.
-	% A boat cannot move if it has less than one person
-	-occurs(move(L,N,M),T) :- N + M < 1.
-	% A boat cannot move people if there is not a boat at the source
-	-occurs(move(L,N,M),T) :- holds(b(S,0),T), L != S.
-	% A boat cannot move more people than there exists at a source
-	-occurs(move(L,N,M),T) :- holds(m(S,X),T), X < M, L != S.
-	-occurs(move(L,N,M),T) :- holds(c(S,X),T), X < N, L != S.
+    % Executability Constraints
+    % A boat cannot move if it has more than two people
+    -occurs(move(L,N,M),T) :- N + M > 2.
+    % A boat cannot move if it has less than one person
+    -occurs(move(L,N,M),T) :- N + M < 1.
+    % A boat cannot move people if there is not a boat at the source
+    -occurs(move(L,N,M),T) :- holds(b(S,0),T), L != S.
+    % A boat cannot move more people than there exists at a source
+    -occurs(move(L,N,M),T) :- holds(m(S,X),T), X < M, L != S.
+    -occurs(move(L,N,M),T) :- holds(c(S,X),T), X < N, L != S.
 	
-	% Inertial Axioms for Inertial Fluents
-	holds(F,T+1) :- #inertial_fluent(F), holds(F,T), not -holds(F,T+1).
-	-holds(F,T+1) :- #inertial_fluent(F), -holds(F,T), not holds(F,T+1).
+    % Inertial Axioms for Inertial Fluents
+    holds(F,T+1) :- #inertial_fluent(F), holds(F,T), not -holds(F,T+1).
+    -holds(F,T+1) :- #inertial_fluent(F), -holds(F,T), not holds(F,T+1).
 	
-	% CWA for Actions
-	-occurs(A,T) :- not occurs(A,T).
+    % CWA for Actions
+    -occurs(A,T) :- not occurs(A,T).
 	
-	% Initial State
-	holds(m(b1,3),0).
-	holds(c(b1,3),0).
-	holds(b(b1,1),0).
-	holds(m(b2,0),0).
-	holds(c(b2,0),0).
-	holds(b(b2,0),0).
-	-holds(casualties,0).
+    % Initial State
+    holds(m(b1,3),0).
+    holds(c(b1,3),0).
+    holds(b(b1,1),0).
+    holds(m(b2,0),0).
+    holds(c(b2,0),0).
+    holds(b(b2,0),0).
+    -holds(casualties,0).
 	
-	% Goal
-	% The goal is achieved when all three of both missionaries and cannibals have made it to the other side without any casualties occuring
-	goal(T) :- holds(m(b2,3),T), holds(c(b2,3),T), -holds(casualties,T).
+    % Goal
+    % The goal is achieved when all three of both missionaries and cannibals have made it to the other side without any casualties occuring
+    goal(T) :- holds(m(b2,3),T), holds(c(b2,3),T), -holds(casualties,T).
 	
-	% Simple Planning Module
-	success :- goal(T).
-	:- not success.
-	% Every action must either be performed or not while the goal is not yet achieved
-	occurs(A,T) | -occurs(A,T) :- not goal(T).
-	% Two actions cannot occur at once
-	:- occurs(A1,T), occurs(A2,T), A1 != A2.
-	% An action is performed at every step before the goal is achieved
-	something_happened(T) :- occurs(A,T).
-	:- goal(T), goal(T-1), not something_happened(I), I < T.
+    % Simple Planning Module
+    success :- goal(T).
+    :- not success.
+    % Every action must either be performed or not while the goal is not yet achieved
+    occurs(A,T) | -occurs(A,T) :- not goal(T).
+    % Two actions cannot occur at once
+    :- occurs(A1,T), occurs(A2,T), A1 != A2.
+    % An action is performed at every step before the goal is achieved
+    something_happened(T) :- occurs(A,T).
+    :- goal(T), goal(T-1), not something_happened(I), I < T.
 	
-	display
-	occurs(A,T).
+    display
+    occurs(A,T).
